@@ -1,14 +1,3 @@
-#convert the input string to array of tokens
-#   change the tokenizer 
-def tokenizer(string)
-	string = string.gsub('{', ' { ')
-	string = string.gsub(':', ' : ')
-	string = string.gsub(',', ' , ')
-	string = string.gsub('}', ' } ')
-	string = string.gsub('[', ' [ ')
-	string = string.gsub(']', ' ] ')
-	tokens = string.split(" ")
-end
 
 def parse_backslash(tokens)
 	if tokens[0] == '\\'
