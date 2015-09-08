@@ -22,7 +22,7 @@ def parse_string(tokens)
   if tokens[0] == '"'
     string = ""
     tokens = tokens[1..-1]
-    if tokens[0] == '"'; return "", tokens[1..-1] end
+    if tokens[0] == '"'; return "", tokens[1..-1].lstrip end
     if tokens[0] == '\\'; string, tokens = parse_backslash(tokens) end
     index = tokens.index(/[\\"]/)
     if index == nil; abort("quotes mismatch") end
@@ -88,7 +88,8 @@ def parse_object(tokens)
       if result == nil; abort("Hash Object Key needs to be string.\n")  end
       key, tokens = result
       colon, tokens = parse_colon(tokens)
-      value, tokens = parser_factory(tokens)
+      result_func = parser_factory(method(:parse_object), method(:parse_array), method(:parse_string), method(:parse_number), method(:parse_true_false))
+      value, tokens = result_func.call(tokens)
       hash_object[key] = value
       tokens = tokens.lstrip
       result = parse_comma(tokens)
@@ -110,7 +111,8 @@ def parse_array(tokens)
     tokens = tokens[1..-1].lstrip
     array = Array.new
     while tokens[0] != ']'
-      value, tokens = parser_factory(tokens)
+      result_func = parser_factory(method(:parse_object), method(:parse_array), method(:parse_string), method(:parse_number), method(:parse_true_false))
+      value, tokens = result_func.call(tokens)
       array << value
       tokens = tokens.lstrip
       result = parse_comma(tokens)
@@ -130,21 +132,27 @@ end
 #anonynous fuction: This function takes tokens as the input and calls all the parser functions passed 
 #to the parser.  This function returns 2 tuples 1) returned type b) remaining to be parsed
 
-def parser_factory(tokens)
-  arr_parsers = [method(:parse_object), method(:parse_array), method(:parse_string), method(:parse_number), method(:parse_true_false)]
-    arr_parsers.each do
+
+def parser_factory(*args)
+  #puts "I am called"
+  return_func = lambda do |tokens|
+    args.each do 
       |parser_func|
       collect_tuple = parser_func.call(tokens)
       if collect_tuple != nil
         return collect_tuple
       end
     end
-    abort("None of the parser functions handled the conditions")
+    abort"None of the parser handled the tokens"
+  end
+  return return_func
 end
 
 filename = ARGV[0]
 file = open(filename, 'r')
-result, tokens = parser_factory(file.read)
+      result_func = parser_factory(method(:parse_object), method(:parse_array))
+      result, tokens = result_func.call(file.read)
+#puts "tokens.length = #{tokens.length} =  #{tokens}"
 if tokens.length != 0
   abort "tokens = #{tokens} wrong object or array creation"
 end
